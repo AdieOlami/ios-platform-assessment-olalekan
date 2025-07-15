@@ -1,16 +1,5 @@
 import Foundation
 
-struct Vehicle {
-    let id: Int
-    let name: String
-    let model: String
-    let year: String
-    let make: String
-    let status: String
-    let location: String
-    let customName: String
-}
-
 struct FuelEntry {
     
     var id: Int?
