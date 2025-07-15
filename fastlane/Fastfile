@@ -15,14 +15,131 @@
 
 default_platform(:ios)
 
+module AppConfiguration
+  AD_HOC = 'Ad-Hoc'
+  RELEASE = 'Release'
+  RELEASE_DEBUG = 'Release-Debug'
+end
+
+# Values for export_method found in https://docs.fastlane.tools/actions/gym/
+module ExportMethod
+  AD_HOC = 'ad-hoc'
+  APP_STORE = 'app-store'
+end
+
+module ExportOptionsPlist
+  AD_HOC = 'fastlane/exportOptions/Adhoc-ExportOptions.plist'
+  RELEASE = 'fastlane/exportOptions/Release-ExportOptions.plist'
+end
+
+module MatchType
+  AD_HOC = 'adhoc'
+  APP_STORE = 'appstore'
+end
+
+# No dependencies needed here; leaving here incase we need it.
+def install_dependencies
+  puts "No dependencies to install"
+end
+
+def version_number
+  return ENV["APP_VERSION_NUMBER"]
+end
+
+def slack_url
+  return ENV["SLACK_URL"]
+end
+
+def iphone_device
+  return ENV["IPHONE_DEVICE"] || "iPhone 16 Pro"
+end
+
+def ios_version
+  return ENV["IOS_VERSION"] || "17.0"
+end
+
+def output_directory
+  return Dir.pwd + "/output/scan"
+end
+
 platform :ios do
+
+  before_all do
+    # Setup CI environment if running on CircleCI
+    setup_circle_ci if ENV['CIRCLECI']
+  end
+
+  ################### DEPENDENCIES ################
+
+  desc "Updates dependencies for iOS and watchOS"
+  lane :deps do
+    install_dependencies
+  end
+
+  ################### TESTING ################
+
+  desc "Build the app for testing"
+  lane :build_for_testing do |options|
+    device=options[:device] || iphone_device
+    scheme="iOS Platform Assessment"
+
+    scan(
+      scheme: scheme,
+      build_for_testing: true,
+      device: device,
+      clean: true
+    )
+  end
+
   desc "A custom fastlane lane to run the unit tests"
-  lane :unit_tests do
-    # add actions here: https://docs.fastlane.tools/actions
+  lane :unit_tests do |options|
+    device = options[:device] || iphone_device
+    scheme = "iOS Platform Assessment"
+
+    scan(
+      scheme: scheme,
+      device: device,
+      only_testing: ["iOS Platform AssessmentTests"],
+      clean: true,
+      code_coverage: true,
+      output_directory: output_directory,
+      output_types: "html,junit",
+      fail_build: true
+    )
   end
 
   desc "A custom fastlane lane to run the UI tests"
-  lane :ui_tests do
-    # add actions here: https://docs.fastlane.tools/actions
+  lane :ui_tests do |options|
+    device = options[:device] || iphone_device
+    scheme = "iOS Platform Assessment"
+
+    scan(
+      scheme: scheme, 
+      device: device,
+      only_testing: ["iOS Platform AssessmentUITests"],
+      clean: true,
+      code_coverage: true,
+      output_directory: output_directory,
+      output_types: "html,junit",
+      fail_build: true,
+      test_without_building: false
+    )
+  end
+
+  desc "Run all tests (unit and UI)"
+  lane :test_all do
+    unit_tests
+    ui_tests
+  end
+
+  desc "Clean build artifacts and test outputs"
+  lane :clean_all do
+    clean_build_artifacts
+    sh("rm -rf #{output_directory}") rescue nil
+  end
+
+  error do |lane, exception|
+    # This block is called when a lane fails
+    puts "Lane #{lane} failed with exception: #{exception}"
   end
 end
