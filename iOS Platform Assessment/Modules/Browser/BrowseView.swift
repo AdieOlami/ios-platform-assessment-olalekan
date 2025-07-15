@@ -1,38 +1,25 @@
 import Foundation
 import SwiftUI
 
+// MARK: - BrowseItem
+
 struct BrowseItem {
     let name: String
     let iconName: String
 }
 
+// MARK: - BrowseView
+
 struct BrowseView: View {
     
-    let assets: [BrowseItem] = [
-        BrowseItem(name: "Equipment", iconName: "hammer"),
-        BrowseItem(name: "Parts", iconName: "shippingbox"),
-        BrowseItem(name: "Vehicles", iconName: "car"),
-    ]
-    
-    let work: [BrowseItem] = [
-        BrowseItem(name: "Inspections", iconName: "checkmark.circle"),
-        BrowseItem(name: "Issues", iconName: "exclamationmark.triangle"),
-        BrowseItem(name: "Service Reminders", iconName: "alarm"),
-        BrowseItem(name: "Work Orders", iconName: "list.clipboard"),
-    ]
-    
-    let directories: [BrowseItem] = [
-        BrowseItem(name: "Contacts", iconName: "person.2"),
-        BrowseItem(name: "Shop Directory", iconName: "wrench.adjustable"),
-    ]
-    
+    // MARK: Internal
     
     var body: some View {
-        NavigationView {
+        NavigationStack(path: $routes) {
             List {
                 Section(header: Text("Assets")) {
                     ForEach(assets, id: \.name) { asset in
-                        NavigationLink(destination: navigationDestination(for: asset)) {
+                        NavigationLink(value: asset.name) {
                             HStack {
                                 Image(systemName: asset.iconName)
                                     .imageScale(.large)
@@ -74,18 +61,41 @@ struct BrowseView: View {
             }
             .listStyle(.insetGrouped)
             .navigationTitle("Browse")
+            .navigationDestination(for: String.self) { route in
+                switch route {
+                case "Vehicles":
+                    VehicleList(viewModel: VehicleListViewModel())
+                default:
+                    Text(route)
+                }
+            }
         }
     }
     
-    func navigationDestination(for item: BrowseItem) -> some View {
-        
-        if item.name == "Vehicles" {
-            AnyView(VehicleList())
-        } else {
-            AnyView(Text(item.name))
-        }
-    }
+    // MARK: Private
+    
+    @State private var routes = NavigationPath()
+    
+    private let assets: [BrowseItem] = [
+        BrowseItem(name: "Equipment", iconName: "hammer"),
+        BrowseItem(name: "Parts", iconName: "shippingbox"),
+        BrowseItem(name: "Vehicles", iconName: "car"),
+    ]
+    
+    private let work: [BrowseItem] = [
+        BrowseItem(name: "Inspections", iconName: "checkmark.circle"),
+        BrowseItem(name: "Issues", iconName: "exclamationmark.triangle"),
+        BrowseItem(name: "Service Reminders", iconName: "alarm"),
+        BrowseItem(name: "Work Orders", iconName: "list.clipboard"),
+    ]
+    
+    private let directories: [BrowseItem] = [
+        BrowseItem(name: "Contacts", iconName: "person.2"),
+        BrowseItem(name: "Shop Directory", iconName: "wrench.adjustable"),
+    ]
 }
+
+// MARK: - Preview
 
 #Preview {
     BrowseView()

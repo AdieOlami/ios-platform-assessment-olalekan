@@ -2,7 +2,6 @@ import SwiftUI
 
 extension View {
     
-    
     @ViewBuilder
     /// Required Field. A red astrisk string.
     /// - Returns: Red astrisk indicating a requirement the user must input.
