@@ -4,7 +4,7 @@ import SwiftUI
 struct iOS_Platform_AssessmentApp: App {
     var body: some Scene {
         WindowGroup {
-          RootView()
+            RootView()
         }
     }
 }
