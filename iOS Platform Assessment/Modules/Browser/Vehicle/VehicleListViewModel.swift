@@ -11,7 +11,7 @@ import Foundation
 
 protocol VehicleListViewModelProviding: ObservableObject {
     var selectedVehicle: Vehicle? { get set }
-    var loadingState: LoadingState<[Vehicle], LoadingStateError> { get }
+    var loadingState: LoadingState<[Vehicle], APIError> { get }
     var searchText: String { get set }
     var lastUpdated: Date? { get }
     var vehicleFuelEntries: [Int: [FuelEntry]] { get }
@@ -32,7 +32,7 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
     
     // MARK: Internal
     
-    @Published private(set) var loadingState: LoadingState<[Vehicle], LoadingStateError> = .loading
+    @Published private(set) var loadingState: LoadingState<[Vehicle], APIError> = .loading
     @Published private(set) var vehicleFuelEntries: [Int: [FuelEntry]] = [:]
     
     @Published var selectedVehicle: Vehicle? = nil
@@ -41,16 +41,20 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
     
     func loadVehicles() async {
         do {
-            let vehicles = try await vehicleService.fetchVehicles()
+            let vehicles = try await vehicleService.fetchVehicles(query: .init(startCursor: nil, perPage: 5))
             
             await MainActor.run {
-                loadingState = .loaded(vehicles)
+                loadingState = .loaded(vehicles.records)
                 lastUpdated = Date()
-                vehicleFuelEntries = mapFuelEntries(to: vehicles)
+                vehicleFuelEntries = mapFuelEntries(to: vehicles.records)
             }
         } catch {
             await MainActor.run {
-                loadingState = .error(.unableToLoadData)
+                if let apiError = error as? APIError {
+                    loadingState = .error(apiError)
+                } else {
+                    loadingState = .error(.unknown)
+                }
             }
         }
     }
@@ -62,12 +66,12 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
             let searchTerms = searchText.lowercased().split(separator: " ")
             return vehicles.filter { vehicle in
                 searchTerms.allSatisfy { term in
-                    vehicle.customName.lowercased().contains(term) ||
+                    vehicle.customName?.lowercased().contains(term) ?? false ||
                     vehicle.make.lowercased().contains(term) ||
                     vehicle.model.lowercased().contains(term) ||
-                    vehicle.year.lowercased().contains(term) ||
-                    vehicle.location.lowercased().contains(term) ||
-                    vehicle.status.lowercased().contains(term)
+                    "\(vehicle.year)".lowercased().contains(term) ||
+                    ((vehicle.location?.lowercased().contains(term)) != nil) ||
+                    ((vehicle.vehicleStatusName?.lowercased().contains(term)) != nil)
                 }
             }
         }

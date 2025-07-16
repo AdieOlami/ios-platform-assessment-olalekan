@@ -10,7 +10,7 @@ import Foundation
 // MARK: - VehicleServiceProviding
 
 protocol VehicleServiceProviding {
-    func fetchVehicles() async throws -> [Vehicle]
+    func fetchVehicles(query: VehicleListQuery) async throws -> VehicleListData
 }
 
 // MARK: - VehicleService
@@ -25,9 +25,9 @@ final class VehicleService: VehicleServiceProviding {
     
     // MARK: Internal
     
-    func fetchVehicles() async throws -> [Vehicle] {
-        SampleData.vehicleList
-//        try await requestFactory.request(with: VehicleApiRouter.vehicleList)
+    func fetchVehicles(query: VehicleListQuery) async throws -> VehicleListData {
+//        SampleData.vehicleList
+        try await requestFactory.request(with: VehicleApiRouter.vehicleList(query: query))
     }
     
     // MARK: Private

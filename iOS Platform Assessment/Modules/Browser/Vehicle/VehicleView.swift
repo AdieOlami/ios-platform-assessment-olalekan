@@ -29,7 +29,9 @@ struct VehicleView: View {
     
     var body: some View {
         List {
-            Text(vehicle.customName)
+            if let customName = vehicle.customName, !customName.isEmpty {
+                Text(customName)
+            }
             
             Section {
                 ForEach(vehicleOptions, id: \.name) { option in
@@ -48,7 +50,7 @@ struct VehicleView: View {
                 }
             }
         }
-        .navigationTitle(vehicle.customName)
+        .navigationTitle(vehicle.customName ?? "Customer")
     }
     
     func navigationDestination(for asset: VehicleOptions) -> some View {

@@ -72,12 +72,12 @@ struct VehicleRow: View {
                 .frame(width: 50, height: 50)
             
             VStack(alignment: .leading) {
-                Text(vehicle.customName)
+                Text(vehicle.customName ?? "John Doe")
                     .font(.headline)
                     .lineLimit(1)
                 
                 HStack {
-                    Text(vehicle.year)
+                    Text("\(vehicle.year)")
                     Text(vehicle.make)
                     Text(vehicle.model)
                 }
@@ -87,10 +87,10 @@ struct VehicleRow: View {
                 HStack {
                     Circle()
                         .frame(width: 10, height: 10)
-                        .foregroundColor(vehicle.status == "Active" ? .green : .red)
-                    Text(vehicle.status)
+                        .foregroundColor(vehicle.vehicleStatusName == "Active" ? .green : .red)
+                    Text(vehicle.vehicleStatusName ?? "Unknown")
                     Text("\u{2022}")
-                    Text(vehicle.location)
+                    Text(vehicle.location ?? "Unknown")
                 }
                 .font(.caption)
                 .foregroundColor(.secondary)

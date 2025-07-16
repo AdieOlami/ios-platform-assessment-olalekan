@@ -73,7 +73,7 @@ struct RequestFactory: RequestFactoryProviding {
             var components = URLComponents()
             components.scheme = "https"
             components.host = builder.baseUrl
-            components.path = "/api/v1" + builder.path
+            components.path = "/api/" + builder.path
             
             guard let url = components.url else {
                 preconditionFailure("Invalid URL components: \(components)")
@@ -84,6 +84,16 @@ struct RequestFactory: RequestFactoryProviding {
         
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = builder.method.rawValue
+        
+        // Ideally, we would get token from a keychanin manager recieved from Login but using hard coded values here
+        
+//        if let token = tokenManager.token {
+//            urlRequest.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
+//        }
+        
+        urlRequest.setValue("Token " + "5a20d9dd78aabe2ca33ccf365ee81804bac74c58", forHTTPHeaderField: "Authorization")
+        urlRequest.setValue("b7fc6a5b44", forHTTPHeaderField: "Account-Token")
+        
         for (key, value) in builder.headers {
             urlRequest.setValue(value, forHTTPHeaderField: key)
         }
@@ -112,12 +122,9 @@ struct RequestFactory: RequestFactoryProviding {
             let decoded = try customDecoder.decode(T.self, from: data)
             return decoded
         } else {
-            
-            
             do {
-                let errorResponse = try customDecoder.decode(BaseResponse.self, from: data)
+                let errorResponse = try customDecoder.decode(ErrorResponse.self, from: data)
                 throw APIError.server(response: errorResponse)
-                
             } catch let decodingError as DecodingError {
                 var errorMessage = "Failed to decode the response."
                 

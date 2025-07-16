@@ -31,19 +31,21 @@ struct ErrorView: View {
                     .font(.headline)
                     .foregroundColor(.primary)
                 
-                if let error = error {
-                    Text(error.localizedDescription)
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
-                } else {
-                    Text("An unexpected error occurred. Please try again.")
-                        .font(.body)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.horizontal)
+                VStack {
+                    if let error = error as? APIError {
+                        if case let .server(description) = error {
+                            Text(description.detail)
+                        } else {
+                            Text(error.localizedDescription)
+                        }
+                    } else {
+                        Text("An unexpected error occurred. Please try again.")
+                    }
                 }
+                .font(.body)
+                .foregroundColor(.secondary)
+                .multilineTextAlignment(.center)
+                .padding(.horizontal)
             }
             
             if let retryAction = retryAction {

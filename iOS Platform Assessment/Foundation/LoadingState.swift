@@ -64,9 +64,3 @@ extension LoadingState {
         }
     }
 }
-
-// MARK: - LoadingStateError
-
-public enum LoadingStateError: Error, Equatable {
-    case unableToLoadData
-}

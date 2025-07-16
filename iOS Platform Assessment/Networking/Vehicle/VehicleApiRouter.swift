@@ -10,7 +10,7 @@ import Foundation
 // MARK: - VehicleApiRouter
 
 enum VehicleApiRouter {
-    case vehicleList
+    case vehicleList(query: VehicleListQuery)
 }
 
 // MARK: - BaseRequest
@@ -29,7 +29,7 @@ extension VehicleApiRouter: BaseRequest {
     }
     
     var headers: HTTPHeaders {
-        [:]
+        ["Content-Type": "application/json"]
     }
     
     var method: HTTPRequestMethod {
@@ -37,6 +37,9 @@ extension VehicleApiRouter: BaseRequest {
     }
     
     var parameters: HTTPParameters {
-        nil
+        switch self {
+        case .vehicleList(let request):
+            request.dictionary
+        }
     }
 }
