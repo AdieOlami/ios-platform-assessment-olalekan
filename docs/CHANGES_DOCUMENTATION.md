@@ -335,6 +335,7 @@ This document outlines the significant improvements and architectural changes ma
 ## Future Recommendations
 
 1. **Continue Analytics Enhancement**: Expand metrics to include user interaction patterns with services like Firebase Analytics/ Amplitude
+2. **Snapshot Tests**: Replace UITests with snapshot test since business logic are tested in Unit Test and UI changes should be tested baesed on comparison. Also cheaper resource consumprion and improved Pull Request process.
 2. **Add More Unit Tests**: Increase test coverage across all modules
 3. **Performance Monitoring**: Implement real-time performance monitoring in production like Crashlytics
 4. **Documentation**: Keep this documentation updated as the project evolves
