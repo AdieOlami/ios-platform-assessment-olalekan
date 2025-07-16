@@ -19,11 +19,30 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
             case .loading:
                 ProgressView()
                     .progressViewStyle(CircularProgressViewStyle())
+                    .onAppear {
+                        pageLoadTracker = PerformanceTracker.shared.startPageLoad(
+                            pageName: "VehicleList",
+                            source: "Browse"
+                        )
+                    }
             case .loaded(let vehicles):
                 VStack {
                     SearchBar(text: $viewModel.searchText)
                         .padding()
                         .background(Color(UIColor.secondarySystemGroupedBackground))
+                        .onChange(of: viewModel.searchText) { searchText in
+                            // Track search response time
+                            let searchStartTime = CFAbsoluteTimeGetCurrent()
+                            DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+                                let duration = CFAbsoluteTimeGetCurrent() - searchStartTime
+                                let filteredVehicles = viewModel.filteredVehicles(from: vehicles)
+                                PerformanceTracker.shared.trackSearchResponse(
+                                    query: searchText,
+                                    resultCount: filteredVehicles.count,
+                                    duration: duration
+                                )
+                            }
+                        }
                     
                     List {
                         ForEach(viewModel.filteredVehicles(from: vehicles), id: \.id) { vehicle in
@@ -39,6 +58,7 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
                                         }
                                     }
                             }
+                            .trackNavigation(destination: "VehicleView", source: "VehicleList")
                             .accessibilityIdentifier(AccessibilityIdentifiers.VehicleList.vehicleListItem(id: vehicle.id))
                             .background(viewModel.selectedVehicle?.id == vehicle.id ? Color.gray.opacity(0.1) : Color.clear)
                         }
@@ -72,11 +92,19 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
                                 }
                                 .padding(.vertical, 8)
                             }
+                            .trackTap(
+                                buttonName: "LoadMoreVehicles",
+                                additionalProperties: [
+                                    "current_count": viewModel.filteredVehicles(from: vehicles).count])
                             .buttonStyle(PlainButtonStyle())
                         }
                     }
                     .refreshable {
                         await viewModel.loadVehicles()
+                    }
+                    .onAppear {
+                        pageLoadTracker?.complete()
+                        pageLoadTracker = nil
                     }
                     
                 }
@@ -86,6 +114,7 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
         }
         .navigationTitle("Vehicles")
         .navigationBarTitleDisplayMode(.inline)
+        .trackViewAppearance(viewName: "VehicleList")
         .task {
             await viewModel.loadVehicles()
         }
@@ -94,6 +123,7 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
     // MARK: Private
     
     @StateObject private var viewModel: ViewModel
+    @State private var pageLoadTracker: PageLoadTracker?
     
 }
 

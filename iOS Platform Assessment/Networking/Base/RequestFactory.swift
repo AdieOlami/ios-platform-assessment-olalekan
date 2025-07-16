@@ -82,6 +82,11 @@ struct RequestFactory: RequestFactoryProviding {
             return url
         }
         
+        let tracker = apiTracker.startAPICall(
+            endpoint: builder.path,
+            method: builder.method.rawValue
+        )
+        
         var urlRequest = URLRequest(url: url)
         urlRequest.httpMethod = builder.method.rawValue
         
@@ -120,6 +125,7 @@ struct RequestFactory: RequestFactoryProviding {
         
         if (200...299).contains(response.statusCode) {
             let decoded = try customDecoder.decode(T.self, from: data)
+            tracker.complete(statusCode: 200)
             return decoded
         } else {
             do {
@@ -143,8 +149,10 @@ struct RequestFactory: RequestFactoryProviding {
                 
                 let userInfo = [NSLocalizedDescriptionKey: errorMessage]
                 let error = NSError(domain: "com.yourdomain.api", code: -1, userInfo: userInfo)
+                tracker.complete(error: error)
                 throw APIError.decodingError(underlyingError: error)
             } catch {
+                tracker.complete(error: error)
                 throw error
             }
             
@@ -152,6 +160,8 @@ struct RequestFactory: RequestFactoryProviding {
     }
     
     // MARK: Private
+    
+    private let apiTracker = PerformanceTracker.shared
     
     private func log(response: HTTPURLResponse?, data: Data?, error: Error?) {
         print("\n - - - - - - - - - - INCOMMING RESPONSE - - - - - - - - - - \n")

@@ -22,6 +22,12 @@ struct HomeView: View {
                 .tabItem {
                     Label("Search", systemImage: "magnifyingglass")
                 }
+            #if DEBUG
+            AnalyticsDashboard()
+                .tabItem {
+                    Label("Analytics", systemImage: "chart.bar")
+                }
+            #endif
         }
         .navigationBarBackButtonHidden(true)
     }

@@ -41,7 +41,6 @@ final class VehicleService: VehicleServiceProviding {
             )
         }
         
-        // Use API for production
         return try await requestFactory.request(with: VehicleApiRouter.vehicleList(query: query))
     }
     
