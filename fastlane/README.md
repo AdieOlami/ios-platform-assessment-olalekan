@@ -103,6 +103,30 @@ Clean build artifacts and test outputs
 
 Run SwiftLint
 
+### ios collect_metrics
+
+```sh
+[bundle exec] fastlane ios collect_metrics
+```
+
+Collect performance metrics over multiple UI test executions
+
+### ios analytics_report
+
+```sh
+[bundle exec] fastlane ios analytics_report
+```
+
+Generate and export analytics report
+
+### ios verify_metrics
+
+```sh
+[bundle exec] fastlane ios verify_metrics
+```
+
+Run performance verification test
+
 ----
 
 This README.md is auto-generated and will be re-generated every time [_fastlane_](https://fastlane.tools) is run.

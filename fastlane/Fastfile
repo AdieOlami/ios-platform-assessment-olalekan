@@ -448,6 +448,71 @@ platform :ios do
     end
   end
 
+  ################### ANALYTICS & METRICS ################
+
+  desc "Collect performance metrics over multiple UI test executions"
+  lane :collect_metrics do |options|
+    executions = options[:executions] || 10
+    device = options[:device] || iphone_device
+    
+    puts "🏃‍♂️ Collecting performance metrics over #{executions} executions"
+    
+    # Build the app for testing first
+    build_for_testing(device: device)
+    
+    # Run the metrics collection test
+    scan(
+      scheme: "iOS Platform Assessment",
+      device: device,
+      only_testing: ["iOS Platform AssessmentTests/MetricsCollectionTest"],
+      clean: false,
+      output_directory: "fastlane/output/metrics",
+      output_types: "html,junit",
+      buildlog_path: "~/Library/Logs/metrics_scan"
+    )
+    
+    puts "✅ Metrics collection completed for #{executions} executions"
+    puts "📊 Check the AnalyticsDashboard in the app for detailed results"
+  end
+
+  desc "Generate and export analytics report"
+  lane :analytics_report do |options|
+    format = options[:format] || "json"
+    executions = options[:executions] || 3
+    
+    puts "📊 Generating analytics report for last #{executions} executions in #{format} format"
+    
+    # Run a simple test that generates the report
+    scan(
+      scheme: "iOS Platform Assessment",
+      device: iphone_device,
+      only_testing: ["iOS Platform AssessmentTests/MetricsCollectionTest/generateTenExecutionAnalyticsReport"],
+      clean: false,
+      output_directory: "fastlane/output/analytics",
+      output_types: "html,junit"
+    )
+    
+    puts "✅ Analytics report generated"
+    puts "📄 Report files are available in the app's Documents/AnalyticsReports directory"
+  end
+
+  desc "Run performance verification test"
+  lane :verify_metrics do |options|
+    device = options[:device] || iphone_device
+    
+    puts "🔍 Verifying metrics collection system"
+    
+    scan(
+      scheme: "iOS Platform Assessment",
+      device: device,
+      only_testing: ["iOS Platform AssessmentTests/MetricsCollectionTest/verifyMetricsCollection"],
+      clean: false,
+      output_directory: "fastlane/output/verification"
+    )
+    
+    puts "✅ Metrics verification completed"
+  end
+
   error do |lane, exception|
     # This block is called when a lane fails
     puts "Lane #{lane} failed with exception: #{exception}"
