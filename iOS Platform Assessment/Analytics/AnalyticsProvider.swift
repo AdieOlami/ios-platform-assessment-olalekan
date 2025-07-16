@@ -13,7 +13,7 @@ protocol AnalyticsProviding: AnyObject {
     /// Tracks a custom analytics event.
     ///
     /// Use this method to record user interactions, feature usage, or any custom events
-    /// that are important for your analytics. The event should contain all necessary
+    /// that are important for analytics. The event should contain all necessary
     /// metadata and properties for proper analysis.
     ///
     /// - Parameter event: The analytics event to track, containing event name and properties
@@ -68,7 +68,7 @@ protocol AnalyticsProviding: AnyObject {
     
     /// Tracks page/screen view metrics and user navigation patterns.
     ///
-    /// Use this method to monitor user flow through your app, track popular screens,
+    /// Use this method to monitor user flow through app, track popular screens,
     /// measure time spent on pages, and understand user navigation patterns.
     ///
     /// - Parameter pageMetric: The page metric containing screen name, timing, and navigation context

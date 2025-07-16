@@ -67,7 +67,7 @@ def output_directory
 end
 
 def apple_team_id
-  return "TEAM_ID" # Replace with your actual Apple Team ID. Team ID could be stored in Keychain using fastlane credentials_manager
+  return "TEAM_ID" # Team ID could be stored in Keychain using fastlane credentials_manager
 end
 
 def set_version_number(build_number)

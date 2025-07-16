@@ -148,7 +148,7 @@ struct RequestFactory: RequestFactoryProviding {
                 }
                 
                 let userInfo = [NSLocalizedDescriptionKey: errorMessage]
-                let error = NSError(domain: "com.yourdomain.api", code: -1, userInfo: userInfo)
+                let error = NSError(domain: "com.feetio.api", code: -1, userInfo: userInfo)
                 tracker.complete(error: error)
                 throw APIError.decodingError(underlyingError: error)
             } catch {
