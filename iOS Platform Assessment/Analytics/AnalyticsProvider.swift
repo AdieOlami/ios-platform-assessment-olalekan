@@ -226,7 +226,7 @@ final class AnalyticsProvider: AnalyticsProviding {
     }
     
     private func sendEvents(_ events: [AnalyticsEvent]) {
-        // In a real app, this would send to analytics service
+        // In a complete implemetation, this would send to analytics service
         // For now, we'll just log and store locally
         
         print("📊 Analytics: Flushing \(events.count) events")

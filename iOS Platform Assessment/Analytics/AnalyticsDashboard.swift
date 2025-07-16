@@ -22,27 +22,22 @@ struct AnalyticsDashboard: View {
             ScrollView {
                 LazyVStack(spacing: 16) {
                     
-                    // Performance Metrics Section
                     AnalyticsSection(title: "Performance Metrics") {
                         PerformanceMetricsView()
                     }
                     
-                    // API Metrics Section
                     AnalyticsSection(title: "API Performance") {
                         APIMetricsView()
                     }
                     
-                    // Page Load Metrics Section
                     AnalyticsSection(title: "Page Load Times") {
                         PageLoadMetricsView()
                     }
                     
-                    // Recent Events Section
                     AnalyticsSection(title: "Recent Events") {
                         RecentEventsView()
                     }
                     
-                    // Actions Section
                     AnalyticsSection(title: "Actions") {
                         ActionsView()
                     }
@@ -58,13 +53,18 @@ struct AnalyticsDashboard: View {
 // MARK: - AnalyticsSection
 
 struct AnalyticsSection<Content: View>: View {
-    let title: String
-    let content: Content
+    
+    // MARK: Lifecycle
     
     init(title: String, @ViewBuilder content: () -> Content) {
         self.title = title
         self.content = content()
     }
+    
+    // MARK: Internal
+    
+    let title: String
+    let content: Content
     
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
@@ -83,7 +83,8 @@ struct AnalyticsSection<Content: View>: View {
 // MARK: - PerformanceMetricsView
 
 struct PerformanceMetricsView: View {
-    @State private var events: [AnalyticsEvent] = []
+    
+    // MARK: Internal
     
     var body: some View {
         VStack(spacing: 8) {
@@ -118,6 +119,10 @@ struct PerformanceMetricsView: View {
         }
     }
     
+    // MARK: Private
+    
+    @State private var events: [AnalyticsEvent] = []
+    
     private func averageDuration(for metric: PerformanceMetric) -> TimeInterval {
         let metricEvents = events.filter { $0.name == metric.rawValue }
         guard !metricEvents.isEmpty else { return 0 }
@@ -139,7 +144,8 @@ struct PerformanceMetricsView: View {
 // MARK: - APIMetricsView
 
 struct APIMetricsView: View {
-    @State private var events: [AnalyticsEvent] = []
+    
+    // MARK: Internal
     
     var body: some View {
         VStack(spacing: 8) {
@@ -178,12 +184,17 @@ struct APIMetricsView: View {
             events = AnalyticsProvider.shared.getStoredEvents()
         }
     }
+    
+    // MARK: Private
+    
+    @State private var events: [AnalyticsEvent] = []
 }
 
 // MARK: - PageLoadMetricsView
 
 struct PageLoadMetricsView: View {
-    @State private var events: [AnalyticsEvent] = []
+    
+    // MARK: Internal
     
     var body: some View {
         VStack(spacing: 8) {
@@ -210,12 +221,17 @@ struct PageLoadMetricsView: View {
             events = AnalyticsProvider.shared.getStoredEvents()
         }
     }
+    
+    // MARK: Private
+    
+    @State private var events: [AnalyticsEvent] = []
 }
 
 // MARK: - RecentEventsView
 
 struct RecentEventsView: View {
-    @State private var events: [AnalyticsEvent] = []
+    
+    // MARK: Internal
     
     var body: some View {
         VStack(spacing: 8) {
@@ -234,11 +250,18 @@ struct RecentEventsView: View {
                 .sorted { $0.timestamp > $1.timestamp }
         }
     }
+    
+    // MARK: Private
+    
+    @State private var events: [AnalyticsEvent] = []
 }
 
 // MARK: - ActionsView
 
 struct ActionsView: View {
+    
+    // MARK: Internal
+    
     var body: some View {
         VStack(spacing: 12) {
             Button("Flush Events") {
@@ -253,6 +276,9 @@ struct ActionsView: View {
         }
     }
     
+    
+    // MARK: Private
+    
     private func clearLocalAnalyticsData() {
         let defaults = UserDefaults.standard
         let keys = defaults.dictionaryRepresentation().keys.filter { $0.hasPrefix("analytics_event_") }
@@ -265,6 +291,9 @@ struct ActionsView: View {
 // MARK: - MetricRow
 
 struct MetricRow: View {
+    
+    // MARK: Internal
+    
     let title: String
     let value: String
     let icon: String
@@ -327,6 +356,9 @@ struct EventRow: View {
         }
         .padding(.vertical, 4)
     }
+    
+    
+    // MARK: Private
     
     private func categoryColor(_ category: AnalyticsCategory) -> Color {
         switch category {

@@ -10,6 +10,6 @@ import Foundation
 // MARK: - Secrets
 
 enum Secrets: String {
-    case apiKey = "5a20d9dd78aabe2ca33ccf365ee81804bac74c58"
-    case token = "b7fc6a5b44"
+    case apiKey = "API_KEY"
+    case token = "TOKEN"
 }
