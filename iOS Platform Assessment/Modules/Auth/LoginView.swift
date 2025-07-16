@@ -3,8 +3,8 @@ import SwiftUI
 
 struct LoginView: View {
     
-    @State private var accountToken = "b7fc6a5b44"
-    @State private var apiKey = "5a20d9dd78aabe2ca33ccf365ee81804bac74c58"
+    @State private var accountToken = ""
+    @State private var apiKey = ""
     @State private var showError = false
     @State private var isLoggedIn = false
     @State private var isLoading = false

@@ -58,7 +58,6 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
                                         }
                                     }
                             }
-                            .trackNavigation(destination: "VehicleView", source: "VehicleList")
                             .accessibilityIdentifier(AccessibilityIdentifiers.VehicleList.vehicleListItem(id: vehicle.id))
                             .background(viewModel.selectedVehicle?.id == vehicle.id ? Color.gray.opacity(0.1) : Color.clear)
                         }

@@ -96,8 +96,8 @@ struct RequestFactory: RequestFactoryProviding {
 //            urlRequest.setValue("Bearer " + token, forHTTPHeaderField: "Authorization")
 //        }
         
-        urlRequest.setValue("Token " + "5a20d9dd78aabe2ca33ccf365ee81804bac74c58", forHTTPHeaderField: "Authorization")
-        urlRequest.setValue("b7fc6a5b44", forHTTPHeaderField: "Account-Token")
+        urlRequest.setValue("Token " + Secrets.apiKey.rawValue, forHTTPHeaderField: "Authorization")
+        urlRequest.setValue(Secrets.token.rawValue, forHTTPHeaderField: "Account-Token")
         
         for (key, value) in builder.headers {
             urlRequest.setValue(value, forHTTPHeaderField: key)

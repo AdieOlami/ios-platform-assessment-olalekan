@@ -2,7 +2,7 @@
 
 ## Overview
 
-This comprehensive analytics collection system measures key performance metrics for the iOS Platform Assessment app, including app start time, page load time, and API call duration.
+This analytics collection system measures key performance metrics for the iOS Platform Assessment app, including app start time, page load time, and API call duration.
 
 ## Architecture
 
@@ -171,7 +171,6 @@ private let queue = DispatchQueue(label: "analytics.queue", qos: .utility)
 
 - Manual flush controls
 - Local data clearing
-- Event export capabilities
 
 ### Visual Analytics
 

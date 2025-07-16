@@ -112,21 +112,19 @@ extension Button {
         if ProcessInfo.processInfo.environment["IS_UI_TESTING"] == "1" {
             self
         } else {
-            self.simultaneousGesture(
-                TapGesture().onEnded { _ in
-                    var properties = additionalProperties
-                    properties["button_name"] = buttonName
-                    properties["timestamp"] = Date().timeIntervalSince1970
-                    
-                    AnalyticsProvider.shared.track(
-                        event: AnalyticsEvent(
-                            name: "button_tapped",
-                            properties: properties,
-                            category: .userInteraction
-                        )
+            self.onTapGesture {
+                var properties = additionalProperties
+                properties["button_name"] = buttonName
+                properties["timestamp"] = Date().timeIntervalSince1970
+                
+                AnalyticsProvider.shared.track(
+                    event: AnalyticsEvent(
+                        name: "button_tapped",
+                        properties: properties,
+                        category: .userInteraction
                     )
-                }
-            )
+                )
+            }
         }
     }
 }
@@ -142,21 +140,19 @@ extension NavigationLink {
         if ProcessInfo.processInfo.environment["IS_UI_TESTING"] == "1" {
             self
         } else {
-            self.simultaneousGesture(
-                TapGesture().onEnded { _ in
-                    AnalyticsProvider.shared.track(
-                        event: AnalyticsEvent(
-                            name: "navigation_tapped",
-                            properties: [
-                                "destination": destination,
-                                "source": source,
-                                "timestamp": Date().timeIntervalSince1970
-                            ],
-                            category: .navigation
-                        )
+            self.onTapGesture {
+                AnalyticsProvider.shared.track(
+                    event: AnalyticsEvent(
+                        name: "navigation_tapped",
+                        properties: [
+                            "destination": destination,
+                            "source": source,
+                            "timestamp": Date().timeIntervalSince1970
+                        ],
+                        category: .navigation
                     )
-                }
-            )
+                )
+            }
         }
     }
 }
