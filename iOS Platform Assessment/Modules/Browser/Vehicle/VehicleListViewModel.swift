@@ -53,7 +53,10 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
         }
         
         do {
-            let vehicleData = try await vehicleService.fetchVehicles(query: .init(startCursor: nil, perPage: pageSize))
+            let vehicleData = try await vehicleService.fetchVehicles(
+                query: .init(
+                    startCursor: nil,
+                    perPage: pageSize))
             
             await MainActor.run {
                 allVehicles = vehicleData.records
@@ -75,14 +78,17 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
     }
     
     func loadMoreVehicles() async {
-        guard !isLoadingMore, hasMorePages, let cursor = nextCursor else { return }
+        guard !isLoadingMore, hasMorePages, searchText.isEmpty, let cursor = nextCursor else { return }
         
         await MainActor.run {
             isLoadingMore = true
         }
         
         do {
-            let vehicleData = try await vehicleService.fetchVehicles(query: .init(startCursor: cursor, perPage: pageSize))
+            let vehicleData = try await vehicleService.fetchVehicles(
+                query: .init(startCursor:
+                                cursor,
+                             perPage: pageSize))
             
             await MainActor.run {
                 allVehicles.append(contentsOf: vehicleData.records)
@@ -108,12 +114,12 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
             let searchTerms = searchText.lowercased().split(separator: " ")
             return vehicles.filter { vehicle in
                 searchTerms.allSatisfy { term in
-                    vehicle.customName?.lowercased().contains(term) ?? false ||
+                    vehicle.customName?.lowercased().contains(term) == true ||
                     vehicle.make.lowercased().contains(term) ||
                     vehicle.model.lowercased().contains(term) ||
                     "\(vehicle.year)".lowercased().contains(term) ||
-                    ((vehicle.location?.lowercased().contains(term)) != nil) ||
-                    ((vehicle.vehicleStatusName?.lowercased().contains(term)) != nil)
+                    vehicle.location?.lowercased().contains(term) == true ||
+                    vehicle.vehicleStatusName?.lowercased().contains(term) == true
                 }
             }
         }

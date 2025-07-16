@@ -57,7 +57,7 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
                             .padding(.vertical, 8)
                         }
                         
-                        if viewModel.hasMorePages && !viewModel.isLoadingMore {
+                        if viewModel.hasMorePages && !viewModel.isLoadingMore && viewModel.searchText.isEmpty {
                             Button(action: {
                                 Task {
                                     await viewModel.loadMoreVehicles()
