@@ -22,7 +22,7 @@ struct Vehicle: Codable, Equatable {
 
 struct VehicleListData: Codable {
     let startCursor: String
-    let nextCursor: String
+    let nextCursor: String?
     let perPage: Int
     let estimatedRemainingCount: Int
     let records: [Vehicle]

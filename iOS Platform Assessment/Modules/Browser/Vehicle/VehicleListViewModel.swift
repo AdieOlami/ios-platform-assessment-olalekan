@@ -15,8 +15,11 @@ protocol VehicleListViewModelProviding: ObservableObject {
     var searchText: String { get set }
     var lastUpdated: Date? { get }
     var vehicleFuelEntries: [Int: [FuelEntry]] { get }
+    var isLoadingMore: Bool { get }
+    var hasMorePages: Bool { get }
     
     func loadVehicles() async
+    func loadMoreVehicles() async
     func filteredVehicles(from vehicles: [Vehicle]) -> [Vehicle]
 }
 
@@ -34,19 +37,31 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
     
     @Published private(set) var loadingState: LoadingState<[Vehicle], APIError> = .loading
     @Published private(set) var vehicleFuelEntries: [Int: [FuelEntry]] = [:]
+    @Published private(set) var isLoadingMore: Bool = false
+    @Published private(set) var hasMorePages: Bool = true
     
     @Published var selectedVehicle: Vehicle? = nil
     @Published var searchText: String = ""
     @Published var lastUpdated: Date?
     
     func loadVehicles() async {
+        await MainActor.run {
+            loadingState = .loading
+            allVehicles = []
+            nextCursor = nil
+            hasMorePages = true
+        }
+        
         do {
-            let vehicles = try await vehicleService.fetchVehicles(query: .init(startCursor: nil, perPage: 5))
+            let vehicleData = try await vehicleService.fetchVehicles(query: .init(startCursor: nil, perPage: pageSize))
             
             await MainActor.run {
-                loadingState = .loaded(vehicles.records)
+                allVehicles = vehicleData.records
+                nextCursor = vehicleData.nextCursor
+                hasMorePages = nextCursor != nil && vehicleData.estimatedRemainingCount > 0
+                loadingState = .loaded(allVehicles)
                 lastUpdated = Date()
-                vehicleFuelEntries = mapFuelEntries(to: vehicles.records)
+                vehicleFuelEntries = mapFuelEntries(to: allVehicles)
             }
         } catch {
             await MainActor.run {
@@ -55,6 +70,33 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
                 } else {
                     loadingState = .error(.unknown)
                 }
+            }
+        }
+    }
+    
+    func loadMoreVehicles() async {
+        guard !isLoadingMore, hasMorePages, let cursor = nextCursor else { return }
+        
+        await MainActor.run {
+            isLoadingMore = true
+        }
+        
+        do {
+            let vehicleData = try await vehicleService.fetchVehicles(query: .init(startCursor: cursor, perPage: pageSize))
+            
+            await MainActor.run {
+                allVehicles.append(contentsOf: vehicleData.records)
+                nextCursor = vehicleData.nextCursor
+                hasMorePages = nextCursor != nil && vehicleData.estimatedRemainingCount > 0
+                loadingState = .loaded(allVehicles)
+                lastUpdated = Date()
+                vehicleFuelEntries = mapFuelEntries(to: allVehicles)
+                isLoadingMore = false
+            }
+        } catch {
+            await MainActor.run {
+                isLoadingMore = false
+                print("Failed to load more vehicles: \(error)")
             }
         }
     }
@@ -80,6 +122,10 @@ final class VehicleListViewModel: VehicleListViewModelProviding {
     // MARK: Private
     
     private var vehicleService: VehicleServiceProviding
+    
+    private var allVehicles: [Vehicle] = []
+    private var nextCursor: String? = nil
+    private let pageSize: Int = 10
     
     private func mapFuelEntries(to vehicles: [Vehicle]) -> [Int: [FuelEntry]] {
         var vehicleFuelEntries: [Int: [FuelEntry]] = [:]

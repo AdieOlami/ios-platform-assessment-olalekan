@@ -31,11 +31,52 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
                                 VehicleRow(vehicle: vehicle)
                                     .onAppear {
                                         viewModel.selectedVehicle = vehicle
+                                        
+                                        if vehicle.id == viewModel.filteredVehicles(from: vehicles).last?.id {
+                                            Task {
+                                                await viewModel.loadMoreVehicles()
+                                            }
+                                        }
                                     }
                             }
                             .accessibilityIdentifier(AccessibilityIdentifiers.VehicleList.vehicleListItem(id: vehicle.id))
                             .background(viewModel.selectedVehicle?.id == vehicle.id ? Color.gray.opacity(0.1) : Color.clear)
                         }
+                        
+                        if viewModel.isLoadingMore {
+                            HStack {
+                                Spacer()
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .blue))
+                                    .scaleEffect(0.8)
+                                Text("Loading more vehicles...")
+                                    .font(.caption)
+                                    .foregroundColor(.secondary)
+                                Spacer()
+                            }
+                            .padding(.vertical, 8)
+                        }
+                        
+                        if viewModel.hasMorePages && !viewModel.isLoadingMore {
+                            Button(action: {
+                                Task {
+                                    await viewModel.loadMoreVehicles()
+                                }
+                            }) {
+                                HStack {
+                                    Spacer()
+                                    Text("Load More")
+                                        .font(.subheadline)
+                                        .foregroundColor(.blue)
+                                    Spacer()
+                                }
+                                .padding(.vertical, 8)
+                            }
+                            .buttonStyle(PlainButtonStyle())
+                        }
+                    }
+                    .refreshable {
+                        await viewModel.loadVehicles()
                     }
                     
                 }
