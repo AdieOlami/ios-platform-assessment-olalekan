@@ -1,0 +1,9 @@
+version: 2.1
+
+# Enable CircleCI's dynamic configuration feature
+# Required for path-filtering orb
+setup: true
+
+orbs:
+  path-filtering: circleci/path-filtering@1.2.0
+  continuation: circleci/continuation@1.1.0

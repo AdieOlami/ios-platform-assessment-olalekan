@@ -15,6 +15,10 @@
 
 default_platform(:ios)
 
+all_targets = [
+  "com.fleetio.mobile-platform-assessment",
+]
+
 module AppConfiguration
   AD_HOC = 'Ad-Hoc'
   RELEASE = 'Release'
@@ -37,7 +41,7 @@ module MatchType
   APP_STORE = 'appstore'
 end
 
-# No dependencies needed here; leaving here incase we need it.
+# No dependencies needed here; leaving here incase.
 def install_dependencies
   puts "No dependencies to install"
 end
@@ -60,6 +64,31 @@ end
 
 def output_directory
   return Dir.pwd + "/output/scan"
+end
+
+def apple_team_id
+  return "TEAM_ID" # Replace with your actual Apple Team ID. Team ID could be stored in Keychain using fastlane credentials_manager
+end
+
+def app_store_connect_api_key
+  return {
+    key_id: ENV["APP_STORE_CONNECT_API_KEY_ID"] || "ABC123DEFG",
+    issuer_id: ENV["APP_STORE_CONNECT_ISSUER_ID"] || "12345678-1234-1234-1234-123456789012",
+    key_filepath: ENV["APP_STORE_CONNECT_API_KEY_PATH"] || "./fastlane/AuthKey_ABC123DEFG.p8",
+    duration: 1200,
+    in_house: false
+  }
+end
+
+def set_version_number(build_number)
+  version = version_number || get_version_number(xcodeproj: "iOS Platform Assessment.xcodeproj")
+  return "#{version}.#{build_number}"
+end
+
+def crashlytics_upload_symbols_path
+  Dir.chdir("..") do
+    return Dir["#{ENV["SOURCE_PACKAGE_PATH"]}/**/upload-symbols"].last
+  end
 end
 
 platform :ios do
@@ -89,6 +118,267 @@ platform :ios do
       device: device,
       clean: true
     )
+  end
+
+  ################### DISTRIBUTION ################
+
+  # Uploads dyms to firebase crashlytics using plist configuration
+  def upload_firebase_dsyms
+    puts "Uploading symbols to Firebase"    
+    binary_path = crashlytics_upload_symbols_path
+    puts "binary_path: #{binary_path}"
+
+    gsp_path = File.dirname(Dir.pwd) + "/GoogleService-Info.plist"
+    puts "gsp_path: #{gsp_path}"
+    
+    # Check if the upload-symbols script exists before trying to use it
+    if File.exist?(binary_path)
+      upload_symbols_to_crashlytics(binary_path: binary_path, gsp_path: gsp_path)
+    else
+      puts "Warning: Firebase Crashlytics upload-symbols script not found at #{binary_path}"
+    end
+  end
+
+  desc "Sync certificates and provisioning profiles for App Store distribution"
+  lane :sync_certificates do |options|
+
+    match_type=options[:app_configuration] || MatchType::APP_STORE
+
+    match(
+      type: match_type,
+      app_identifier: all_targets,
+      git_url: ENV["MATCH_GIT_URL"] || "https://github.com/fleetio/certificates.git",
+      git_branch: "main",
+      storage_mode: "git",
+      readonly: false,
+      force_for_new_devices: true
+    )
+
+    # Ensure we have a valid distribution certificate
+    cert(
+      development: false,
+      force: false, # Don't create new cert if valid one exists
+      output_path: "./fastlane/certificates"
+    )
+  end
+
+  desc "Build and sign IPA for App Store distribution"
+  lane :create_build do |options|
+
+    unless options[:combine_version]
+      UI.user_error! "combine_version is missing"
+    end
+
+    unless options[:app_configuration]
+      UI.user_error! "app_configuration is missing"
+    end
+
+    app_configuration=options[:app_configuration]
+    match_type=""
+    export_method=""
+    ipa_name=""
+    export_options=""
+
+    case app_configuration
+    when AppConfiguration::AD_HOC
+      puts "Configuring variables for Ad-Hoc"
+
+      match_type=MatchType::AD_HOC
+      export_method=ExportMethod::AD_HOC
+      ipa_name="fleetio-prod-#{combine_version}"
+      export_options=ExportOptionsPlist::AD_HOC
+
+    when AppConfiguration::RELEASE
+      puts "Configuring variables for Release"
+
+      match_type=MatchType::APP_STORE
+      export_method=ExportMethod::APP_STORE
+      ipa_name="fleetio-appstore-#{combine_version}"
+      export_options=ExportOptionsPlist::RELEASE
+    end
+
+    puts "match_type: #{match_type}"
+    puts "export_method: #{export_method}"
+    puts "ipa_name: #{ipa_name}"
+    puts "export_options: #{export_options}"
+
+    install_dependencies
+
+    # Sync certificates and provisioning profiles
+    sync_certificates
+
+    output_directory = ENV["OUTPUT_DIRECTORY"]
+    ipa_path = "#{output_directory}/#{ipa_name}.ipa"
+    dsym_path = "#{output_directory}/#{ipa_name}.app.dSYM.zip"
+    
+
+    ENV["IPA_PATH"] = ipa_path
+    ENV["DSYM_PATH"] = dsym_path
+
+    puts "Creating build for #{combine_version}"
+
+    # Build and sign the app
+    gym(
+      scheme: "iOS Platform Assessment",
+      configuration: app_configuration,
+      export_method: export_method,
+      export_team_id: apple_team_id,
+      output_name: ipa_name,
+      output_directory: output_directory,
+      clean: true,
+      include_symbols: true,
+      include_bitcode: false,
+      silent: false,
+      suppress_xcode_output: false
+    )
+
+    # Upload dSYMs to Firebase Crashlytics
+    upload_firebase_dsyms
+  end
+
+  desc "Upload IPA to App Store Connect and submit for review"
+  lane :submit_to_app_store do |options|
+
+    unless options[:build_number]
+      UI.user_error! "build_number is missing"
+    end
+
+    combine_version = set_version_number(options[:build_number])
+    create_build(combine_version: combine_version, app_configuration: AppConfiguration::RELEASE)
+
+    ipa_path = ENV["IPA_PATH"]
+
+    # Upload to App Store Connect
+
+    upload_to_app_store(
+      force: true,
+      phased_release: true,
+      skip_binary_upload: false, #default
+      skip_app_version_update: false, #default
+      skip_metadata: false, #default
+      skip_screenshots: false, #default
+      overwrite_screenshots: true,
+      automatic_release: false, # default
+      reset_ratings: false, # default
+      submit_for_review: false,
+      precheck_include_in_app_purchases: false,
+      ipa: ipa_path,
+      team_id: apple_team_id,
+      app_identifier: "com.fleetio.mobile-platform-assessment",
+      # Comes from https://github.com/fastlane/fastlane/issues/5542#issuecomment-254201994
+      submission_information: {
+        add_id_info_uses_idfa: true,
+        add_id_info_serves_ads: false,
+        add_id_info_tracks_action: true,
+        add_id_info_tracks_install: true,
+        export_compliance_platform: 'ios',
+        export_compliance_encryption_updated: false,
+        export_compliance_uses_encryption: true,
+        export_compliance_is_exempt: true,
+      }
+    )
+
+    # Optional: Submit for review automatically
+    if options[:submit_for_review]
+      deliver(
+        api_key: app_store_connect_api_key,
+        app_identifier: "com.fleetio.mobile-platform-assessment",
+        submit_for_review: true,
+        automatic_release: false,
+        submission_information: {
+          add_id_info_limits_tracking: true,
+          add_id_info_serves_ads: false,
+          add_id_info_tracks_action: false,
+          add_id_info_tracks_install: false,
+          add_id_info_uses_idfa: false,
+          content_rights_has_rights: true,
+          content_rights_contains_third_party_content: false,
+          export_compliance_platform: 'ios',
+          export_compliance_compliance_required: false,
+          export_compliance_encryption_updated: false,
+          export_compliance_uses_encryption: false,
+          export_compliance_is_exempt: false,
+        }
+      )
+    end
+
+    # Send notification
+    if slack_url
+      slack(
+        message: "🚀 iOS Platform Assessment v#{version_number} has been uploaded to App Store Connect!",
+        slack_url: slack_url,
+        channel: "#ios-releases",
+        success: true,
+        payload: {
+          "Build Number" => get_build_number(xcodeproj: "iOS Platform Assessment.xcodeproj"),
+          "Version" => version_number || get_version_number(xcodeproj: "iOS Platform Assessment.xcodeproj"),
+          "Scheme" => "iOS Platform Assessment"
+        },
+        default_payloads: [:git_branch, :git_author, :last_git_commit_message]
+      )
+    end
+  end
+
+  desc "Upload build to TestFlight for beta testing"
+  lane :build_testflight do |options|
+    
+    unless options[:build_number]
+      UI.user_error! "build_number is missing"
+    end
+
+    combine_version = set_version_number(options[:build_number])
+    
+    # Build IPA for TestFlight
+    create_build(combine_version: combine_version, app_configuration: AppConfiguration::RELEASE)
+
+    ipa_path = ENV["IPA_PATH"]
+
+    # Upload to TestFlight
+    upload_to_testflight(
+      api_key: app_store_connect_api_key,
+      ipa: ipa_path,
+      
+      # TestFlight specific options
+      skip_submission: false,
+      skip_waiting_for_build_processing: options[:skip_waiting] || false,
+      
+      # Beta review information
+      beta_app_review_info: {
+        contact_email: ENV["BETA_CONTACT_EMAIL"] || "developer@fleetio.com",
+        contact_first_name: "iOS",
+        contact_last_name: "Developer",
+        contact_phone: "+1234567890",
+        demo_account_name: "demo@fleetio.com",
+        demo_account_password: "Demo123!",
+        notes: "This is a beta build for testing the iOS Platform Assessment app."
+      },
+      
+      # Localized build information
+      localized_build_info: {
+        "en-US" => {
+          whats_new: "Bug fixes and performance improvements."
+        }
+      },
+      
+      # Groups to distribute to
+      groups: options[:groups] || ["Internal Testing"],
+      
+      # Notify beta testers
+      notify_external_testers: options[:notify_testers] || false,
+      
+      # Changelog
+      changelog: options[:changelog] || "Internal testing build with latest features and bug fixes."
+    )
+
+    # Send Slack notification for beta release
+    if slack_url
+      slack(
+        message: "✈️ iOS Platform Assessment Beta v#{version_number} is available on TestFlight!",
+        slack_url: slack_url,
+        channel: "#ios-beta",
+        success: true
+      )
+    end
   end
 
   desc "A custom fastlane lane to run the unit tests"
@@ -136,6 +426,56 @@ platform :ios do
   lane :clean_all do
     clean_build_artifacts
     sh("rm -rf #{output_directory}") rescue nil
+  end
+
+  ################### TOOLS ################
+
+  desc "Run SwiftLint" #This is a custom lane to run SwiftLint. I did not add the python script so this is just a placeholder.
+  lane :lint do |options|
+    # Retrieve the 'fix' option, defaults to false if not provided
+    should_fix = options[:fix] || false
+
+    temp_target_branch = "temp_target_branch"
+    # Change to root directory of the project
+    Dir.chdir(ENV['PWD']) do
+
+      begin
+        sh("swiftlint version")
+      rescue => e
+        UI.error("😬 SwiftLint is not installed. Please install SwiftLint first.")
+        UI.error("💨 run `brew install swiftlint` to install")
+        raise e
+      end
+        begin
+          UI.message("Running linter")
+          if File.exist?(".git/shallow")
+            # Convert shallow clone to full clone
+            sh("git fetch --unshallow")
+          end
+
+          # Fetch the target branch
+          sh("git fetch origin develop:#{temp_target_branch}")
+
+          merge_base = sh("git merge-base HEAD #{temp_target_branch}").strip
+
+          if should_fix
+            sh("python3 linter.py --fix --merge-base #{merge_base}")
+          else
+            sh("python3 linter.py --merge-base #{merge_base}")
+          end
+        rescue => e
+          UI.error("😞 Critical linting error encountered.")
+          raise e
+        ensure
+          # Clean up temp branch
+          begin
+            sh("git branch -D #{temp_target_branch}")
+            UI.message("Temporary branch '#{temp_target_branch}' has been deleted.")
+          rescue => cleanup_error
+            UI.warning("Failed to delete temporary branch '#{temp_target_branch}': #{cleanup_error}")
+          end
+        end
+    end
   end
 
   error do |lane, exception|

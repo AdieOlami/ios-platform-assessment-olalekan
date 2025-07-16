@@ -31,6 +31,38 @@ Updates dependencies for iOS and watchOS
 
 Build the app for testing
 
+### ios sync_certificates
+
+```sh
+[bundle exec] fastlane ios sync_certificates
+```
+
+Sync certificates and provisioning profiles for App Store distribution
+
+### ios create_build
+
+```sh
+[bundle exec] fastlane ios create_build
+```
+
+Build and sign IPA for App Store distribution
+
+### ios submit_to_app_store
+
+```sh
+[bundle exec] fastlane ios submit_to_app_store
+```
+
+Upload IPA to App Store Connect and submit for review
+
+### ios build_testflight
+
+```sh
+[bundle exec] fastlane ios build_testflight
+```
+
+Upload build to TestFlight for beta testing
+
 ### ios unit_tests
 
 ```sh
