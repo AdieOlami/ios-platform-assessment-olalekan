@@ -352,7 +352,7 @@ platform :ios do
   end
 
   desc "A custom fastlane lane to run the unit tests"
-  lane :unit_tests do |options|
+  lane :unit_test do |options|
     device = options[:device] || iphone_device
     scheme = "iOS Platform Assessment"
 
@@ -369,7 +369,7 @@ platform :ios do
   end
 
   desc "A custom fastlane lane to run the UI tests"
-  lane :ui_tests do |options|
+  lane :ui_test do |options|
     device = options[:device] || iphone_device
     scheme = "iOS Platform Assessment"
 

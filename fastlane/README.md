@@ -63,18 +63,18 @@ Upload IPA to App Store Connect and submit for review
 
 Upload build to TestFlight for beta testing
 
-### ios unit_tests
+### ios unit_test
 
 ```sh
-[bundle exec] fastlane ios unit_tests
+[bundle exec] fastlane ios unit_test
 ```
 
 A custom fastlane lane to run the unit tests
 
-### ios ui_tests
+### ios ui_test
 
 ```sh
-[bundle exec] fastlane ios ui_tests
+[bundle exec] fastlane ios ui_test
 ```
 
 A custom fastlane lane to run the UI tests
@@ -94,6 +94,14 @@ Run all tests (unit and UI)
 ```
 
 Clean build artifacts and test outputs
+
+### ios lint
+
+```sh
+[bundle exec] fastlane ios lint
+```
+
+Run SwiftLint
 
 ----
 
