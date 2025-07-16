@@ -298,6 +298,16 @@ This document outlines the significant improvements and architectural changes ma
 
 ---
 
+## AI Usage
+
+### 18. Analytics Reporter
+
+- **Capabilities**:
+  - Analytics reporting when running the UI Test
+  - Imporve the Bash script to handle edgecases
+
+---
+
 ## Summary of Benefits
 
 ### Maintainability
