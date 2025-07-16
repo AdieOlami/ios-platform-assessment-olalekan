@@ -30,7 +30,7 @@ struct VehicleList<ViewModel: VehicleListViewModelProviding>: View {
                     SearchBar(text: $viewModel.searchText)
                         .padding()
                         .background(Color(UIColor.secondarySystemGroupedBackground))
-                        .onChange(of: viewModel.searchText) { searchText in
+                        .onChange(of: viewModel.searchText) { _, searchText in
                             // Track search response time
                             let searchStartTime = CFAbsoluteTimeGetCurrent()
                             DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
