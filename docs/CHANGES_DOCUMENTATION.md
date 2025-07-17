@@ -349,6 +349,7 @@ This document outlines the significant improvements and architectural changes ma
 2. **Add More Unit Tests**: Increase test coverage across all modules
 3. **Performance Monitoring**: Implement real-time performance monitoring in production like Crashlytics
 4. **Documentation**: Keep this documentation updated as the project evolves
+4. **Modularization**: Per my conversation with Jody, we could seperate the Analytics, Networking into sepperate component and reintegrate it back via Local SPM.
 
 ---
 
